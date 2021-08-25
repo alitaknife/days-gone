@@ -13,7 +13,7 @@ import (
 	"github.com/gogf/gf/os/gtime"
 )
 
-var File = fileService{}
+var File = &fileService{}
 
 type fileService struct{}
 
@@ -60,10 +60,14 @@ func (f *fileService) Upload(r *ghttp.Request, file *ghttp.UploadFile) (code res
 // List 获取文件列表
 func (f *fileService) List(r *ghttp.Request, req *model.FileListReq) (fileList []*model.File, total int, err error) {
 	condition := make(g.Map)
-	condition["status"] = req.Status
+	condition["is_delete"] = 0
+	if req.Status != "" {
+		condition["status"] = req.Status
+	}
 	if req.FileName != "" {
 		condition["file_name like ?"] = req.FileName + "%"
-	} else if len(req.CreatAt) > 0 {
+	}
+	if len(req.CreatAt) > 0 {
 		condition["create_at between ? and ?"] = req.CreatAt
 	}
 
@@ -82,10 +86,16 @@ func (f *fileService) Update(r *ghttp.Request, req *model.FileUpdateReq) error {
 	return err
 }
 
-// Download 文件下载
-func (f *fileService) Download(r *ghttp.Request, id int) (file *model.File, err error) {
+// Delete 删除文件
+func (f *fileService) Delete(r *ghttp.Request, id int) error {
 	db := dao.File.Ctx(r.Context())
-	file = (*model.File)(nil)
-	err = db.Where("id", id).Scan(&file)
-	return file, err
+	_, err := db.Data(g.Map{"is_delete": 1}).Where("id", id).Update()
+	return err
+}
+
+// Download 文件下载
+func (f *fileService) Download(r *ghttp.Request, id int) (res gdb.Value, err error) {
+	db := dao.File.Ctx(r.Context())
+	res, err = db.Fields("file_addr").Where("id = ? and status = ? and is_delete = ?", id, 0, 0).Value()
+	return res, err
 }

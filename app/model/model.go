@@ -17,8 +17,8 @@ type File struct {
 	FileAddr string      `orm:"file_addr"        json:"fileAddr"` // 文件存储位置
 	CreateAt *gtime.Time `orm:"create_at"        json:"createAt"` // 创建日期
 	UpdateAt *gtime.Time `orm:"update_at"        json:"updateAt"` // 更新日期
-	Status   int         `orm:"status"           json:"status"`   // 状态(可用/禁用/已删除等状态)
-	Ext1     int         `orm:"ext1"             json:"ext1"`     // 备用字段1
+	Status   uint        `orm:"status"           json:"status"`   // 状态(0：正常，1：禁用)
+	IsDelete uint        `orm:"is_delete"        json:"isDelete"` // 是否已经删除(0：否，1：是)
 	Ext2     string      `orm:"ext2"             json:"ext2"`     // 备用字段2
 }
 
@@ -50,5 +50,6 @@ type UserFile struct {
 	FileName   string      `orm:"file_name"   json:"fileName"`   // 文件名
 	UploadAt   *gtime.Time `orm:"upload_at"   json:"uploadAt"`   // 上传时间
 	LastUpdate *gtime.Time `orm:"last_update" json:"lastUpdate"` // 最后修改时间
-	Status     int         `orm:"status"      json:"status"`     // 文件状态(0正常1禁用2已删除)
+	Status     uint        `orm:"status"      json:"status"`     // 文件状态(0：正常，1：禁用)
+	IsDelete   uint        `orm:"is_delete"   json:"isDelete"`   // 是否已经删除(0：否，1：是)
 }

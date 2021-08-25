@@ -4,8 +4,8 @@ import (
 	"days-gone/app/model"
 	"days-gone/app/service"
 	"days-gone/library/response"
+	"days-gone/utils"
 	"github.com/gogf/gf/net/ghttp"
-	"strconv"
 )
 
 var File = &fileApi{}
@@ -28,7 +28,7 @@ func (f *fileApi) Upload(r *ghttp.Request) {
 func (f *fileApi) List(r *ghttp.Request) {
 	var fileListReq *model.FileListReq
 	if err := r.Parse(&fileListReq); err != nil {
-		response.JsonErrExit(r, response.ErrorParsePram)
+		response.JsonErrStrExit(r, err.Error())
 		return
 	}
 
@@ -53,17 +53,29 @@ func (f *fileApi) Update(r *ghttp.Request) {
 	}
 }
 
-func (f *fileApi) Download(r *ghttp.Request) {
-	id, ok := r.Get("id").(string)
-	if ok {
-		idInt, _ := strconv.Atoi(id)
-		file, err := service.File.Download(r, idInt)
-		if err == nil && file != nil {
-			r.Response.ServeFileDownload(file.FileAddr)
-		} else {
-			response.JsonErrExit(r, response.ErrorDownload)
-		}
+func (f *fileApi) Delete(r *ghttp.Request) {
+	id, err := utils.ValidId(r) // 校验 Id 合法性
+	if err != nil {
+		response.JsonErrStrExit(r, err.Error())
 	} else {
-		response.JsonErrExit(r, response.ErrorDownload)
+		if err := service.File.Delete(r, id); err != nil {
+			response.JsonErrExit(r, response.ErrorDeleted)
+		} else {
+			response.JsonSucExit(r, response.SuccessDeleted)
+		}
+	}
+}
+
+func (f *fileApi) Download(r *ghttp.Request) {
+	id, err := utils.ValidId(r) // 校验 Id 合法性
+	if err != nil {
+		response.JsonErrStrExit(r, err.Error())
+	} else {
+		res, err := service.File.Download(r, id)
+		if err != nil || res.IsEmpty() {
+			response.JsonErrExit(r, response.ErrorDownload)
+		} else {
+			r.Response.ServeFileDownload(res.String())
+		}
 	}
 }

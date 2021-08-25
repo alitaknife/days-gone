@@ -11,3 +11,9 @@ func (p *Page) Paginate() (limit, offset int) {
 	offset = p.Size * (p.Current - 1)
 	return limit, offset
 }
+
+// Location 客户端地理位置实体
+type Location struct {
+	City string `p:"city" v:"required#请输入城市名称"`
+	Province string `p:"province" v:"required#请输入省份名称"`
+}

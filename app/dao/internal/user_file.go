@@ -26,7 +26,8 @@ type UserFileColumns struct {
 	FileName   string // 文件名
 	UploadAt   string // 上传时间
 	LastUpdate string // 最后修改时间
-	Status     string // 文件状态(0正常1禁用2已删除)
+	Status     string // 文件状态(0：正常，1：禁用)
+	IsDelete   string // 是否已经删除(0：否，1：是)
 }
 
 //  userFileColumns holds the columns for table user_file.
@@ -39,6 +40,7 @@ var userFileColumns = UserFileColumns{
 	UploadAt:   "upload_at",
 	LastUpdate: "last_update",
 	Status:     "status",
+	IsDelete:   "is_delete",
 }
 
 // NewUserFileDao creates and returns a new DAO object for table data access.

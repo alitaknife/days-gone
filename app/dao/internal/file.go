@@ -26,8 +26,8 @@ type FileColumns struct {
 	FileAddr string // 文件存储位置
 	CreateAt string // 创建日期
 	UpdateAt string // 更新日期
-	Status   string // 状态(可用/禁用/已删除等状态)
-	Ext1     string // 备用字段1
+	Status   string // 状态(0：正常，1：禁用)
+	IsDelete string // 是否已经删除(0：否，1：是)
 	Ext2     string // 备用字段2
 }
 
@@ -41,7 +41,7 @@ var fileColumns = FileColumns{
 	CreateAt: "create_at",
 	UpdateAt: "update_at",
 	Status:   "status",
-	Ext1:     "ext1",
+	IsDelete: "is_delete",
 	Ext2:     "ext2",
 }
 
