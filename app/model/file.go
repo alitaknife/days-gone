@@ -14,3 +14,9 @@ type FileUpdateReq struct {
 	FileName string `p:"fileName" v:"required#文件名不能为空"`
 	Status   string    `p:"status" v:"required|between:0,1#请输入合法的状态值"`
 }
+
+// FastUploadReq 文件快传请求结构体
+type FastUploadReq struct {
+	FileName string `p:"fileName" v:"required#文件名不能为空"`
+	FileSha1   string    `p:"fileSha1" v:"required#文件hash值不能为空"`
+}

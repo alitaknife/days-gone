@@ -12,6 +12,22 @@ var File = &fileApi{}
 
 type fileApi struct{}
 
+func (f *fileApi) FastUpload(r *ghttp.Request)  {
+	var fastReq = &model.FastUploadReq{}
+	err := r.Parse(fastReq)
+	if err != nil {
+		response.JsonSucStrExit(r, err.Error(), false)
+		return
+	}
+	err = service.File.FastUpload(r, fastReq.FileSha1, fastReq.FileName)
+	if err != nil {
+		response.JsonSucStrExit(r, err.Error(), false)
+		return
+	}
+	// 秒传成功
+	response.JsonSucExit(r, response.SuccessUpdated)
+}
+
 func (f *fileApi) Upload(r *ghttp.Request) {
 	file := r.GetUploadFile("upload-file")
 	if file != nil {

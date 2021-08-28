@@ -35,6 +35,7 @@ func init() {
 			utils.Auth.Middleware(group)
 			group.GET("/user/info", api.User.Info)
 
+			group.POST("/file/fast-upload", api.File.FastUpload)
 			group.POST("/file/upload", api.File.Upload)
 			group.POST("/file/list", api.File.List)
 			group.POST("/file/update", api.File.Update)

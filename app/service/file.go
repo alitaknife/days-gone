@@ -6,6 +6,7 @@ import (
 	"days-gone/app/model"
 	"days-gone/library/response"
 	"days-gone/utils"
+	"errors"
 	"github.com/gogf/gf/database/gdb"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
@@ -16,6 +17,45 @@ import (
 var File = &fileService{}
 
 type fileService struct{}
+
+// FastUpload 文件快传
+func (f *fileService) FastUpload(r *ghttp.Request, sha1 string, name string) error {
+	db := dao.File.Ctx(r.Context())
+	dbUserFile := dao.UserFile.Ctx(r.Context())
+	resFile, err := db.Where("file_sha1", sha1).One()
+	if err == nil && len(resFile) > 0{
+		resUserFile, err := dbUserFile.Where("file_name", name).One()
+		if err != nil {
+			return errors.New("文件上传失败")
+		}
+		if len(resUserFile) > 0{
+			// 用户文件表中存在该条数据,直接返回
+			return errors.New("文件已经存在")
+		}
+		var userFile = &model.UserFile{}
+		err = resFile.Struct(userFile)
+		if err != nil {
+			return errors.New("文件上传失败")
+		}
+		userFile.UserName = User.GetCacheUserInfo(r).UserName
+		userFile.UploadAt = gtime.Now()
+		// 写入用户文件表
+		resInsert, err := dbUserFile.Insert(userFile)
+		if err != nil {
+			return errors.New("文件上传失败")
+		}
+		rows, err := resInsert.RowsAffected()
+		if err != nil {
+			return errors.New("文件上传失败")
+		}
+		if rows > 0 {
+			return nil
+		}
+		return errors.New("文件上传失败")
+	}
+	// 没有记录要去调用普通接口
+	return errors.New("文件上传失败")
+}
 
 // Upload 文件上传
 func (f *fileService) Upload(r *ghttp.Request, file *ghttp.UploadFile) (code response.Code, err error) {
