@@ -16,16 +16,21 @@ func (f *fileApi) FastUpload(r *ghttp.Request)  {
 	var fastReq = &model.FastUploadReq{}
 	err := r.Parse(fastReq)
 	if err != nil {
-		response.JsonSucStrExit(r, err.Error(), false)
+		response.JsonErrStrExit(r, err.Error())
 		return
 	}
-	err = service.File.FastUpload(r, fastReq.FileSha1, fastReq.FileName)
+	// res 1表示失败，0表示妙传成功，2表示秒传失败，请求普通接口
+	res, err := service.File.FastUpload(r, fastReq.FileSha1, fastReq.FileName)
 	if err != nil {
-		response.JsonSucStrExit(r, err.Error(), false)
+		response.JsonErrStrExit(r, err.Error())
 		return
 	}
 	// 秒传成功
-	response.JsonSucExit(r, response.SuccessUpdated)
+	if res == 0 {
+		response.JsonSucExit(r, response.SuccessFastUpload, false)
+	}
+	// 让客户端请求普通接口
+	response.JsonSucStrExit(r, "请求普通接口", true)
 }
 
 func (f *fileApi) Upload(r *ghttp.Request) {

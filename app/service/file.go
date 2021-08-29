@@ -19,42 +19,42 @@ var File = &fileService{}
 type fileService struct{}
 
 // FastUpload 文件快传
-func (f *fileService) FastUpload(r *ghttp.Request, sha1 string, name string) error {
+func (f *fileService) FastUpload(r *ghttp.Request, sha1 string, name string) (int8, error) {
 	db := dao.File.Ctx(r.Context())
 	dbUserFile := dao.UserFile.Ctx(r.Context())
 	resFile, err := db.Where("file_sha1", sha1).One()
 	if err == nil && len(resFile) > 0{
-		resUserFile, err := dbUserFile.Where("file_name", name).One()
+		resUserFile, err := dbUserFile.Where(g.Map{"file_name": name, "file_sha1": sha1}).One()
 		if err != nil {
-			return errors.New("文件上传失败")
+			return 1, errors.New("文件上传失败")
 		}
 		if len(resUserFile) > 0{
 			// 用户文件表中存在该条数据,直接返回
-			return errors.New("文件已经存在")
+			return 1, errors.New("该文件已经存在")
 		}
 		var userFile = &model.UserFile{}
 		err = resFile.Struct(userFile)
 		if err != nil {
-			return errors.New("文件上传失败")
+			return 1, errors.New("文件上传失败")
 		}
 		userFile.UserName = User.GetCacheUserInfo(r).UserName
 		userFile.UploadAt = gtime.Now()
+		userFile.Status = 0
 		// 写入用户文件表
 		resInsert, err := dbUserFile.Insert(userFile)
 		if err != nil {
-			return errors.New("文件上传失败")
+			return 1, errors.New("文件上传失败")
 		}
 		rows, err := resInsert.RowsAffected()
-		if err != nil {
-			return errors.New("文件上传失败")
+		if err != nil || rows == 0{
+			return 1, errors.New("文件上传失败")
+		} else {
+			// 秒传成功
+			return 0, nil
 		}
-		if rows > 0 {
-			return nil
-		}
-		return errors.New("文件上传失败")
 	}
-	// 没有记录要去调用普通接口
-	return errors.New("文件上传失败")
+	// 文件表中没有记录要去调用普通接口
+	return 2, nil
 }
 
 // Upload 文件上传

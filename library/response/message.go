@@ -10,6 +10,7 @@ var Message = map[Code]string{
 	SuccessFirst:        "获取一条数据成功!",
 	SuccessCreated:      "创建成功!",
 	SuccessUpdated:      "更新成功!",
+	SuccessFastUpload: "秒传成功",
 	SuccessDeleted:      "删除成功!",
 	SuccessGetList:      "获取列表数据成功!",
 	SuccessOperation:    "操作成功!",

@@ -10,6 +10,7 @@ const (
 	SuccessCreated
 	SuccessDeleted
 	SuccessUpdated
+	SuccessFastUpload
 	SuccessGetList
 	SuccessOperation
 	SuccessBatchDeleted
