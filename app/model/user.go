@@ -15,6 +15,14 @@ type UserSignInReq struct {
 	UserPwd  string `p:"userPwd" v:"required|length:6,20#请输入密码|密码长度不够"`
 }
 
+// UserInfoReq 用户更新信息请求结构体
+type UserInfoReq struct {
+	UserNickname string `p:"userNickname" v:"required|length:1,16#请输入用户昵称|昵称长度为:min到:max位"`
+	Sex int `p:"sex" v:"required|between:0,1#请输入合法的状态值"`
+	Email string `p:"email" v:"email#请输入合法的邮箱"`
+	Phone string `p:"phone" v:"phone#请输入合法的手机号"`
+}
+
 // UserSignInRes 用户登录返回结构体
 type UserSignInRes struct {
 	UserName       string      `json:"userName"`

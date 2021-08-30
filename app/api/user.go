@@ -44,12 +44,29 @@ func (u *userApi) SignIn(r *ghttp.Request) (string, interface{}) {
 	return user.UserName, user
 }
 
+// Info 获取用户信息
 func (u *userApi) Info(r *ghttp.Request) {
 	userCache := service.User.GetCacheUserInfo(r)
 	if userCache != nil {
 		response.JsonSucExit(r, response.SuccessUserInfo, userCache)
 	}
 	response.JsonErrExit(r, response.ErrorUserInfo)
+}
+
+// UpdateInfo
+func (u *userApi) UpdateInfo(r *ghttp.Request) {
+	var userInfoReq *model.UserInfoReq
+	err := r.Parse(&userInfoReq)
+	if err != nil {
+		response.JsonErrStrExit(r, err.Error())
+		return
+	}
+
+	if err := service.User.UpdateInfo(r, userInfoReq); err != nil {
+		response.JsonErrExit(r, response.ErrorUpdated)
+	} else {
+		response.JsonSucExit(r, response.SuccessUpdated)
+	}
 }
 
 // LogOut 登出之前调用

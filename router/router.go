@@ -34,6 +34,7 @@ func init() {
 		group.Group(baseUrl+"/", func(group *ghttp.RouterGroup) {
 			utils.Auth.Middleware(group)
 			group.GET("/user/info", api.User.Info)
+			group.POST("/user/update-info", api.User.UpdateInfo)
 
 			group.POST("/file/fast-upload", api.File.FastUpload)
 			group.POST("/file/upload", api.File.Upload)

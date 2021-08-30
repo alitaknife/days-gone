@@ -48,6 +48,21 @@ func (u *userService) SignIn(r *ghttp.Request, req *model.UserSignInReq) (user *
 	}
 }
 
+func (u *userService) UpdateInfo(r *ghttp.Request, req *model.UserInfoReq) error {
+	db := dao.User.Ctx(r.Context())
+	userCache := u.GetCacheUserInfo(r)
+	_ = gconv.Struct(req, userCache)
+	res, err := db.Data(*userCache).Where("user_name", userCache.UserName).Update()
+	if err != nil {
+		return err
+	}
+	_, err = res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (u *userService) LogOut(r *ghttp.Request) bool {
 	db := dao.User.Ctx(r.GetCtx())
 	userName := u.GetCacheUserInfo(r).UserName
