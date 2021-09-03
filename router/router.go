@@ -14,7 +14,7 @@ func init() {
 	s.Group("/", func(group *ghttp.RouterGroup) {
 		// 无需鉴权
 		group.POST("/user/sign-up", api.User.SignUp)
-		group.POST("/common/weather", api.CommonApi.Weather)
+		group.POST("/common/weather", api.Common.Weather)
 		// 启动 auth
 		utils.Auth = &gtoken.GfToken{
 			CacheMode:        g.Cfg().GetInt8("gToken.CacheMode"),
@@ -34,6 +34,7 @@ func init() {
 		group.Group(baseUrl+"/", func(group *ghttp.RouterGroup) {
 			utils.Auth.Middleware(group)
 			group.GET("/user/info", api.User.Info)
+			group.POST("/user/upload-avatar", api.User.UploadAvatar)
 			group.POST("/user/update-info", api.User.UpdateInfo)
 
 			group.POST("/file/fast-upload", api.File.FastUpload)
@@ -47,6 +48,8 @@ func init() {
 			group.POST("/user-file/update", api.UserFile.Update)
 			group.GET("/user-file/delete", api.UserFile.Delete)
 			group.GET("/user-file/download", api.UserFile.Download)
+
+			group.GET("/common/pic-base64", api.Common.ToBase64)
 		})
 	})
 }

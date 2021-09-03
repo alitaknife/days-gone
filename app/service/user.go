@@ -5,9 +5,11 @@ import (
 	"days-gone/app/model"
 	"days-gone/utils"
 	"github.com/gogf/gf/crypto/gmd5"
+	"github.com/gogf/gf/encoding/gjson"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 	"github.com/gogf/gf/os/gtime"
+	"github.com/gogf/gf/text/gstr"
 	"github.com/gogf/gf/util/gconv"
 	"github.com/gogf/gf/util/guid"
 )
@@ -61,6 +63,45 @@ func (u *userService) UpdateInfo(r *ghttp.Request, req *model.UserInfoReq) error
 		return err
 	}
 	return nil
+}
+
+func (u *userService) UploadAvatar(r *ghttp.Request, avatar *model.Avatar) (string, error) {
+	var baseUrl string = g.Config().GetString("gitBed.BASE_URL")
+	var owner string = g.Config().GetString("gitBed.OWNER")
+	var repo string = g.Config().GetString("gitBed.REPO")
+	var path string = g.Config().GetString("gitBed.PATH")
+	var picName string = gtime.Now().Format("Y/m/d/His")
+
+	url := baseUrl + owner + "/" + repo + "/contents/" + path + "/" + picName + ".png" // url 构建
+	res := g.Client().ContentType("multipart/form-data").PostContent(url, g.Map{
+		"access_token": g.Config().GetString("gitBed.ACCESS_TOKEN"),
+		"content": gstr.StrEx(avatar.Avatar, ","),
+		"message": g.Config().GetString("gitBed.MSG"),
+		"branch": g.Config().GetString("gitBed.BRANCH"),
+		})
+
+	if j, err := gjson.DecodeToJson(res); err != nil {
+		return "", err
+	} else {
+		avatarUrl := j.GetString("content.download_url")
+		if avatarUrl == ""{
+			return "", err
+		}
+		// 头像上传成功就更新到数据库
+		db := dao.User.Ctx(r.GetCtx())
+		result, err := db.Data(g.Map{"avatar": avatarUrl}).Where("user_name", u.GetCacheUserInfo(r).UserName).Update()
+		if err != nil {
+			return "", err
+		}
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return "", err
+		}
+		if rows == 0 {
+			return "", nil
+		}
+		return avatarUrl, nil
+	}
 }
 
 func (u *userService) LogOut(r *ghttp.Request) bool {

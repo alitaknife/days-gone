@@ -1,6 +1,8 @@
 package model
 
-import "github.com/gogf/gf/os/gtime"
+import (
+	"github.com/gogf/gf/os/gtime"
+)
 
 // UserSignUpReq 用户注册请求结构体
 type UserSignUpReq struct {
@@ -37,4 +39,9 @@ type UserSignInRes struct {
 	LastActive     *gtime.Time `json:"lastActive"`
 	Profile        string      `json:"profile"`
 	Status         int         `json:"status"`
+}
+
+// Avatar 用户头像上传，数据返回
+type Avatar struct {
+	Avatar string `p:"avatar" v:"required" json:"avatar"`
 }

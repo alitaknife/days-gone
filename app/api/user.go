@@ -53,7 +53,7 @@ func (u *userApi) Info(r *ghttp.Request) {
 	response.JsonErrExit(r, response.ErrorUserInfo)
 }
 
-// UpdateInfo
+// UpdateInfo 更新用户信息
 func (u *userApi) UpdateInfo(r *ghttp.Request) {
 	var userInfoReq *model.UserInfoReq
 	err := r.Parse(&userInfoReq)
@@ -66,6 +66,25 @@ func (u *userApi) UpdateInfo(r *ghttp.Request) {
 		response.JsonErrExit(r, response.ErrorUpdated)
 	} else {
 		response.JsonSucExit(r, response.SuccessUpdated)
+	}
+}
+
+func (u *userApi) UploadAvatar(r *ghttp.Request) {
+	var avatar *model.Avatar
+	err := r.Parse(&avatar)
+	if err != nil {
+		response.JsonErrStrExit(r, err.Error())
+		return
+	}
+	avatarUrl, err := service.User.UploadAvatar(r, avatar)
+	if err != nil {
+		response.JsonErrExit(r, response.ErrorNoFileUpload)
+		return
+	}
+	if avatarUrl == "" {
+		response.JsonErrExit(r, response.ErrorNoFileUpload)
+	} else {
+		response.JsonSucExit(r, response.SuccessUpdated, avatarUrl)
 	}
 }
 

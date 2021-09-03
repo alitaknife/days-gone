@@ -8,11 +8,11 @@ import (
 	"github.com/gogf/gf/net/ghttp"
 )
 
-var CommonApi = &common{}
+var Common = &commonApi{}
 
-type common struct {}
+type commonApi struct {}
 
-func (c *common) Weather(r *ghttp.Request) {
+func (c *commonApi) Weather(r *ghttp.Request) {
 	var location *model.Location
 	err := r.Parse(&location)
 	if err != nil {
@@ -24,4 +24,14 @@ func (c *common) Weather(r *ghttp.Request) {
 		return
 	}
 	response.JsonErrStrExit(r, "获取天气失败!")
+}
+
+func (c *commonApi) ToBase64(r *ghttp.Request)  {
+	url, ok := r.Get("url").(string)
+	if ok {
+		base64 := service.Common.ToBase64(r, url)
+		response.JsonSucExit(r, response.SuccessFirst, base64)
+	} else {
+		response.JsonErrStrExit(r, "图片转换失败!")
+	}
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"days-gone/app/model"
+	"github.com/gogf/gf/encoding/gbase64"
 	"github.com/gogf/gf/encoding/gjson"
 	"github.com/gogf/gf/encoding/gurl"
 	"github.com/gogf/gf/frame/g"
@@ -29,4 +30,11 @@ func (c *commonService) Weather(r *ghttp.Request, loc *model.Location) *gjson.Js
 	final := gstr.Str(temp, "{") // { 第一次出现是 json 信息开头
 	jsonObj, _ := gjson.DecodeToJson(final)
 	return jsonObj
+}
+
+func (c *commonService) ToBase64(r *ghttp.Request, url string) string {
+	var picType = gstr.SubStr(url, gstr.PosR(url, ".") + 1)
+	res := g.Client().GetContent(url)
+	base64 := gbase64.EncodeToString([]byte(res))
+	return "data:image/" + picType + ";base64," + base64
 }
