@@ -33,6 +33,7 @@ var Message = map[Code]string{
 	// User
 	ErrorUserArdExist: "该用户名已被占用!",
 	ErrorSignIn:       "登录失败!",
+	ErrorSignInNoFind: "该用户可能不存在",
 	SuccessSignIn:     "登录成功!",
 	SuccessSignUp:     "注册成功!",
 	SuccessUserInfo:   "获取用户信息成功!",

@@ -8,10 +8,17 @@ import (
 	"github.com/gogf/gf/net/ghttp"
 )
 
+func MiddlewareCORS(r *ghttp.Request) {
+	r.Response.CORSDefault()
+	r.Middleware.Next()
+}
+
 func init() {
 	s := g.Server()
 	baseUrl := g.Config().GetString("BaseUrl")
-	s.Group("/", func(group *ghttp.RouterGroup) {
+	s.Group(baseUrl+"/", func(group *ghttp.RouterGroup) {
+		// 允许跨域
+		group.Middleware(MiddlewareCORS)
 		// 无需鉴权
 		group.POST("/user/sign-up", api.User.SignUp)
 		group.POST("/common/weather", api.Common.Weather)
@@ -31,7 +38,7 @@ func init() {
 			LogoutBeforeFunc: api.User.LogOut,
 		}
 		// 需要认证
-		group.Group(baseUrl+"/", func(group *ghttp.RouterGroup) {
+		group.Group("/", func(group *ghttp.RouterGroup) {
 			utils.Auth.Middleware(group)
 			group.GET("/user/info", api.User.Info)
 			group.POST("/user/upload-avatar", api.User.UploadAvatar)

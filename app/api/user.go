@@ -37,6 +37,8 @@ func (u *userApi) SignIn(r *ghttp.Request) (string, interface{}) {
 		response.JsonErrExit(r, response.ErrorSignIn)
 	}
 	if user == nil {
+		// 用户不存在
+		response.JsonErrExit(r, response.ErrorSignInNoFind)
 		// 返回空字符表示 gToken 登录失败
 		return "", nil
 	}

@@ -29,6 +29,7 @@ const (
 
 	ErrorUserArdExist
 	ErrorSignIn
+	ErrorSignInNoFind
 	SuccessSignIn
 	SuccessSignUp
 	SuccessUserInfo

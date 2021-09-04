@@ -1,0 +1,75 @@
+BaseUrl = "/api"
+
+# HTTP Server
+[server]
+	Address     = ":8199"
+	ServerRoot  = "public"
+	ServerAgent = "gf-app"
+	LogPath     = "/tmp/log/gf-app/server"
+
+# Logger.
+[logger]
+    Path        = "/tmp/log/gf-app"
+    Level       = "all"
+    Stdout      = true
+
+# Template.
+[viewer]
+    Path        = "template"
+    DefaultFile = "index.html"
+    Delimiters  =  ["{{", "}}"]
+# Upload
+[upload]
+    Path = "D:\\Zone\\Script\\upload"
+# Database.
+[database]
+    link  = "mysql:root:root@tcp(127.0.0.1:3306)/days_gone"
+    debug = true
+    [database.logger]
+        Path   = "/tmp/log/gf-app/sql"
+        Level  = "all"
+        Stdout = true
+
+# Redis 数据库配置
+[redis]
+    default = "127.0.0.1:6379,0,root?idleTimeout=600"
+#    cache   = "127.0.0.1:6379,1,root?idleTimeout=600"
+
+# gtoken 配置
+[gToken]
+    CacheMode = 2
+    CacheKey = "Gone"
+    Timeout = 0
+    MaxRefresh = 0
+    TokenDelimiter= "_"
+    EncryptKey = "c2dab3e23f19038725e18ef81c86bb50"
+    AuthFailMsg = "登录超时，请重新登录"
+    MultiLogin = true
+
+# 图床令牌
+[gitBed]
+    BASE_URL = "https://gitee.com/api/v5/repos/"
+    ACCESS_TOKEN = "21a187151d787c88ee6908d4711a15eb"  # 请自行设置
+    OWNER = "alitaknife"
+    REPO = "images"
+    PATH = "img"
+    MSG = "add pic by days gone"
+    BRANCH = "master"
+
+# gf 工具配置
+[gfcli]
+    [[gfcli.gen.dao]]
+    link   = "mysql:root:root@tcp(127.0.0.1:3306)/days_gone"
+    group  = ""
+    prefix = ""
+    [gfcli.build]
+    name     = "days-gone"
+    path     = "./bin"
+    arch     = "amd64"
+    system   = "linux"
+    mod      = "none"
+    cgo      = 0
+    pack     = "config,public,template"
+    version  = ""
+    output   = ""
+    extra    = ""

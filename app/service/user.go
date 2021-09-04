@@ -39,7 +39,7 @@ func (u *userService) SignUp(r *ghttp.Request, req *model.UserSignUpReq) error {
 func (u *userService) SignIn(r *ghttp.Request, req *model.UserSignInReq) (user *model.User, err error) {
 	db := dao.User.Ctx(r.GetCtx())
 	err = db.Where(g.Map{"user_name": req.UserName}).Scan(&user)
-	if err != nil {
+	if err != nil || user == nil{
 		return user, err
 	}
 	// 密码判断
