@@ -23,6 +23,9 @@ const (
 	ErrorOperation
 	ErrorBatchDeleted
 
+	ErrorGetCap
+	ErrorGetType
+	ErrorGetUpDays
 	ErrorNoFileUpload
 	ErrorFileArdExist
 	ErrorDownload
@@ -33,6 +36,9 @@ const (
 	SuccessSignIn
 	SuccessSignUp
 	SuccessUserInfo
+	SuccessGetCap
+	SuccessGetType
+	SuccessGetUpDays
 	ErrorUserInfo
 	ErrorCaptcha
 )

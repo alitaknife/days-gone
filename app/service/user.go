@@ -114,6 +114,8 @@ func (u *userService) LogOut(r *ghttp.Request) bool {
 	return true
 }
 
+
+
 // GetCacheUserInfo 获取缓存用户信息
 func (u *userService) GetCacheUserInfo(r *ghttp.Request) *model.UserSignInRes {
 	res := utils.Auth.GetTokenData(r)

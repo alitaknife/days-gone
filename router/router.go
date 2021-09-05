@@ -55,6 +55,9 @@ func init() {
 			group.POST("/user-file/update", api.UserFile.Update)
 			group.GET("/user-file/delete", api.UserFile.Delete)
 			group.GET("/user-file/download", api.UserFile.Download)
+			group.GET("/user-file/used-cap", api.UserFile.UsedCap)
+			group.GET("/user-file/files-type", api.UserFile.FilesType)
+			group.GET("/user-file/upload-days", api.UserFile.UploadDays)
 
 			group.GET("/common/pic-base64", api.Common.ToBase64)
 		})

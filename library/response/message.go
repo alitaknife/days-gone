@@ -39,4 +39,10 @@ var Message = map[Code]string{
 	SuccessUserInfo:   "获取用户信息成功!",
 	ErrorUserInfo:     "获取用户信息失败!",
 	ErrorCaptcha:      "验证码获取失败!",
+	ErrorGetCap: "获取已使用容量失败",
+	ErrorGetType: "获取用户文件类型失败",
+	ErrorGetUpDays: "获取用户上传文件数失败",
+	SuccessGetCap: "获取已使用容量成功",
+	SuccessGetType: "获取用户所有文件类型成功",
+	SuccessGetUpDays: "获取用户上传文件数成功",
 }

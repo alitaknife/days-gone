@@ -3,8 +3,10 @@ package service
 import (
 	"days-gone/app/dao"
 	"days-gone/app/model"
+	"github.com/gogf/gf/database/gdb"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
+	"math"
 )
 
 var UserFile = &userFileService{}
@@ -64,4 +66,40 @@ func (f *userFileService) Download(r *ghttp.Request, id int) (s string) {
 		return ""
 	}
 	return resSec.String()
+}
+
+// UsedCap 获取用户网盘已使用容量
+func (f *userFileService) UsedCap(r *ghttp.Request) (float64, error) {
+	db := dao.UserFile.Ctx(r.GetCtx())
+	userName := User.GetCacheUserInfo(r).UserName
+	size, err := db.Fields("SUM(file_size)").Where(g.Map{"user_name": userName, "status": 0, "is_delete": 0}).Value()
+	if err != nil {
+		return 0, err
+	}
+	if size.IsEmpty() {
+		return 0, err
+	}
+	// 此处假设总容量为 0.1M
+	return size.Float64()/(math.Pow(1024, 2))/100, err
+}
+
+// FilesType 获取用户所有的文件类型以及数目
+func (f *userFileService) FilesType(r *ghttp.Request) (gdb.Result, error)  {
+	db := dao.UserFile.Ctx(r.GetCtx())
+	userName := User.GetCacheUserInfo(r).UserName
+	res, err := db.Fields("count(1) as value", "substring_index(file_name, \".\", -1) as name").Where(g.Map{"user_name": userName, "status": 0, "is_delete": 0}).Group("name").OrderAsc("value").All()
+	if err != nil || res.IsEmpty() {
+		return nil, err
+	}
+	return res, err
+}
+
+// UploadDays 获取最近一个月上传的文件数
+func (f *userFileService) UploadDays(r *ghttp.Request) (gdb.Result, error) {
+	userName := User.GetCacheUserInfo(r).UserName
+	res, err := dao.UserFile.UploadFileDays(userName)
+	if err != nil || res.IsEmpty() {
+		return nil, err
+	}
+	return res, err
 }

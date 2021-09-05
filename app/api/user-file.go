@@ -66,3 +66,36 @@ func (f *userFileApi) Download(r *ghttp.Request) {
 		}
 	}
 }
+
+// UsedCap 获取用户网盘已使用容量
+func (f *userFileApi) UsedCap(r *ghttp.Request)  {
+	sizeP, err := service.UserFile.UsedCap(r)
+	if err != nil {
+		response.JsonErrExit(r, response.ErrorGetCap)
+	}
+	if sizeP == 0 {
+		response.JsonErrExit(r, response.ErrorGetCap)
+	}
+	response.JsonSucExit(r, response.SuccessGetCap, sizeP)
+}
+
+// FilesType 获取用户所有的文件类型以及数目
+func (f *userFileApi) FilesType(r *ghttp.Request)  {
+	res, err := service.UserFile.FilesType(r)
+	if err != nil || res == nil{
+		response.JsonErrExit(r, response.ErrorGetType)
+	} else {
+		response.JsonSucExit(r, response.SuccessGetType, res.List())
+	}
+}
+
+// UploadDays 获取最近一个月上传的文件数
+func (f *userFileApi) UploadDays(r *ghttp.Request)  {
+	res, err := service.UserFile.UploadDays(r)
+	if err != nil || res == nil{
+		response.JsonErrExit(r, response.ErrorGetUpDays)
+	} else {
+		response.JsonSucExit(r, response.SuccessGetUpDays, res.List())
+	}
+
+}

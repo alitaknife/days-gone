@@ -6,6 +6,8 @@ package dao
 
 import (
 	"days-gone/app/dao/internal"
+	"github.com/gogf/gf/database/gdb"
+	"github.com/gogf/gf/frame/g"
 )
 
 // userFileDao is the manager for logic model data accessing and custom defined data operations functions management.
@@ -21,4 +23,35 @@ var (
 	}
 )
 
-// Fill with you ideas below.
+// UploadFileDays 获取最近一个月上传的文件数
+func (u *userFileDao) UploadFileDays(userName string) (gdb.Result, error) {
+	res, err := g.DB().GetAll(`SELECT
+		day,
+		IFNULL(cnt,0) as record
+	FROM
+		(
+		SELECT
+			count( 1 ) AS cnt,
+			DATE_FORMAT( upload_at, "%Y-%m-%d" ) AS dates 
+		FROM
+			user_file 
+		WHERE
+			DATE_SUB( CURDATE( ), INTERVAL 30 DAY ) <= DATE( upload_at ) and user_name = ?
+		GROUP BY
+			dates 
+		) a
+		RIGHT JOIN (
+		SELECT
+			DATE_FORMAT( date_add( curdate( ) + 1, INTERVAL ( cast( help_topic_id AS signed INTEGER ) - 30 ) DAY ), '%Y-%m-%d' ) day 
+		FROM
+			mysql.help_topic 
+		WHERE
+			help_topic_id < DAY ( last_day( curdate( ) ) ) 
+		ORDER BY
+		help_topic_id 
+		) b ON a.dates = b.day`, userName)
+	if err != nil {
+		return nil, err
+	}
+	return res, err
+}
