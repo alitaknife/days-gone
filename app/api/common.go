@@ -6,6 +6,7 @@ import (
 	"days-gone/library/response"
 	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/net/ghttp"
+	"github.com/gogf/gf/util/gvalid"
 )
 
 var Common = &commonApi{}
@@ -14,24 +15,26 @@ type commonApi struct {}
 
 func (c *commonApi) Weather(r *ghttp.Request) {
 	var location *model.Location
-	err := r.Parse(&location)
-	if err != nil {
-		response.JsonErrStrExit(r, gerror.Current(err).Error())
+	if err := r.Parse(&location); err != nil {
+		if v, ok := err.(gvalid.Error); ok{
+			panic(gerror.NewCode(53001, v.FirstString()))
+		}
+		panic(gerror.NewCode(53001, "parse error"))
 	}
+
 	weather := service.Common.Weather(r, location)
-	if weather != nil {
-		response.JsonSucExit(r, response.SuccessFirst, weather)
-		return
+	if weather == nil{
+		panic(gerror.NewCode(53001, "get the weather failed"))
 	}
-	response.JsonErrStrExit(r, "获取天气失败!")
+	response.SucResp(r).SetData(weather).JsonExit()
 }
 
 func (c *commonApi) ToBase64(r *ghttp.Request)  {
 	url, ok := r.Get("url").(string)
 	if ok {
 		base64 := service.Common.ToBase64(r, url)
-		response.JsonSucExit(r, response.SuccessFirst, base64)
+		response.SucResp(r).SetData(base64).JsonExit()
 	} else {
-		response.JsonErrStrExit(r, "图片转换失败!")
+		panic(gerror.NewCode(53002, "conversion failed"))
 	}
 }

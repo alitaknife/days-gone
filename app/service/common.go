@@ -22,12 +22,12 @@ func (c *commonService) Weather(r *ghttp.Request, loc *model.Location) *gjson.Js
 	u.Add("city_name", loc.City)
 	u.Add("province_name", loc.Province)
 
-	urlStr := gurl.BuildQuery(u) // 参数拼接
+	urlStr := gurl.BuildQuery(u) // parameter splicing
 	baseUrl := "http://weathernew.pae.baidu.com/weathernew/pc?"
 	res := g.Client().GetContent(baseUrl + urlStr)
 	// 从返回的 HTML 模板中提取天气信息
-	temp := gstr.StrTillEx(res, ";") // ; 第一次出现是 json 信息结尾
-	final := gstr.Str(temp, "{") // { 第一次出现是 json 信息开头
+	temp := gstr.StrTillEx(res, ";") // ; The first time it appears is the end of the json message
+	final := gstr.Str(temp, "{") // { The first time it appears is the start of the json message
 	jsonObj, _ := gjson.DecodeToJson(final)
 	return jsonObj
 }

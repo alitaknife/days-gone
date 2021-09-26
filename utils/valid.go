@@ -21,11 +21,11 @@ func ValidId(r *ghttp.Request) (int, error) {
 			if v, ok := err.(gvalid.Error); ok {
 				return -1, errors.New(gerror.Current(v).Error())
 			}
-			return -1, errors.New("请输入合法参数")
+			return -1, errors.New("please enter legal parameters")
 		}
 		idInt, _ := strconv.Atoi(strId)
 		return idInt, err
 	} else {
-		return -1, errors.New("请输入合法参数")
+		return -1, errors.New("please enter legal parameters")
 	}
 }

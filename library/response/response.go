@@ -1,58 +1,57 @@
 package response
 
-import "github.com/gogf/gf/net/ghttp"
-
-var (
-	SUCCESS      = 0    // 正常
-	FAIL         = -1   // 失败
-	ERROR        = -99  // 异常
-	UNAUTHORIZED = -401 // 未认证
+import (
+	"days-gone/app/model"
+	"github.com/gogf/gf/net/ghttp"
 )
 
-type JsonResponse struct {
-	Code int         `json:"code"` // 错误码((0:成功, 1:失败, >1:错误码))
-	Msg  string      `json:"msg"`
-	Data interface{} `json:"data"`
+type ApiResp struct {
+	r *ghttp.Request
+	c *model.CommonRes
 }
 
-// PageResponse 分页返回结构体
-type PageResponse struct {
-	List    interface{} `json:"list"`
-	Total   int         `json:"total"`
-	Current int         `json:"current"`
-	Size    int         `json:"size"`
-}
-
-func Json(r *ghttp.Request, code int, msg string, data ...interface{}) {
-	responseData := interface{}(nil)
-	if len(data) > 0 {
-		responseData = data[0]
-	} else {
-		responseData = ""
+func SucResp(r *ghttp.Request) *ApiResp {
+	c := model.CommonRes{
+		Code: 20000,
+		Msg: "operation succeeded！",
+		Data: "",
 	}
-	_ = r.Response.WriteJson(JsonResponse{
-		Code: code,
-		Msg:  msg,
-		Data: responseData,
-	})
+	return &ApiResp{
+		r: r,
+		c: &c,
+	}
 }
 
-func JsonSucExit(r *ghttp.Request, msgCode Code, data ...interface{}) {
-	Json(r, SUCCESS, msgCode.Message(), data...)
-	r.Exit()
+func ErrorResp(r *ghttp.Request) *ApiResp {
+	c := model.CommonRes{
+		Code:  50000,
+		Msg:   "operation failed！",
+		Data: "",
+	}
+	return &ApiResp{
+		r: r,
+		c: &c,
+	}
 }
 
-func JsonErrExit(r *ghttp.Request, msgCode Code, data ...interface{}) {
-	Json(r, FAIL, msgCode.Message(), data...)
-	r.Exit()
+func (a *ApiResp) SetCode(code int32) *ApiResp {
+	a.c.Code = code
+	return a
 }
 
-func JsonSucStrExit(r *ghttp.Request, msg string, data ...interface{}) {
-	Json(r, SUCCESS, msg, data...)
-	r.Exit()
+func (a *ApiResp) SetMsg(msg string) *ApiResp {
+	a.c.Msg = msg
+	return a
 }
 
-func JsonErrStrExit(r *ghttp.Request, msg string, data ...interface{}) {
-	Json(r, FAIL, msg, data...)
-	r.Exit()
+func (a *ApiResp) SetData(data interface{}) *ApiResp {
+	a.c.Data = data
+	return a
 }
+
+func (a *ApiResp) JsonExit() {
+	a.r.Response.WriteJsonExit(a.c)
+}
+
+
+

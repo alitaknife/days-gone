@@ -1,5 +1,20 @@
 package model
 
+// CommonRes 通用 api 响应
+type CommonRes struct {
+	Code  int32         `json:"code"`  // 响应编码
+	Msg   string      `json:"msg"`   // 消息
+	Data  interface{} `json:"data"`  // 数据
+}
+
+// PageRes 分页返回结构体
+type PageRes struct {
+	List    interface{} `json:"list"`
+	Total   int         `json:"total"`
+	Current int         `json:"current"`
+	Size    int         `json:"size"`
+}
+
 // Page 分页实体
 type Page struct {
 	Current int `p:"current" v:"required|length:1,1000#请输入页数|页数长度为:min到:max位" json:"current" form:"current"`

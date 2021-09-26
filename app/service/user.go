@@ -6,6 +6,7 @@ import (
 	"days-gone/utils"
 	"github.com/gogf/gf/crypto/gmd5"
 	"github.com/gogf/gf/encoding/gjson"
+	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 	"github.com/gogf/gf/os/gtime"
@@ -23,7 +24,7 @@ func (u *userService) SignUp(r *ghttp.Request, req *model.UserSignUpReq) error {
 	salt := guid.S()
 	ps, err := gmd5.EncryptString(req.UserPwd + salt)
 	if err != nil {
-		return err
+		return gerror.Wrap(err, "generate salt error")
 	}
 	userInfo := &model.User{
 		UserName:     req.UserName,
@@ -32,35 +33,52 @@ func (u *userService) SignUp(r *ghttp.Request, req *model.UserSignUpReq) error {
 		Salt:         salt,
 		SignUpAt:     gtime.Now(),
 	}
-	_, err = db.Insert(userInfo)
-	return err
+	ra, err := db.Insert(userInfo)
+	if err != nil {
+		return gerror.New("insert error: please check your name and password")
+	}
+	if rows, err := ra.RowsAffected(); err != nil {
+		return gerror.New("insert error")
+	} else if rows == 0 {
+		return gerror.New("insert error: no rows founded")
+	}
+	return nil
 }
 
 func (u *userService) SignIn(r *ghttp.Request, req *model.UserSignInReq) (user *model.User, err error) {
 	db := dao.User.Ctx(r.GetCtx())
 	err = db.Where(g.Map{"user_name": req.UserName}).Scan(&user)
-	if err != nil || user == nil{
-		return user, err
+	if err != nil {
+		return nil, gerror.New("search error")
 	}
-	// 密码判断
-	if ps, err := gmd5.EncryptString(req.UserPwd + user.Salt); err != nil || ps != user.UserPwd {
-		return nil, err
+	if user == nil {
+		return user, gerror.New("cannot find this user")
+	}
+
+	// check password
+	if ps, err := gmd5.EncryptString(req.UserPwd + user.Salt); err != nil {
+		return nil, gerror.New("login failed")
+	} else if ps != user.UserPwd {
+		return nil, gerror.New("wrong password")
 	} else {
-		return user, err
+		return user, nil
 	}
 }
 
 func (u *userService) UpdateInfo(r *ghttp.Request, req *model.UserInfoReq) error {
 	db := dao.User.Ctx(r.Context())
 	userCache := u.GetCacheUserInfo(r)
-	_ = gconv.Struct(req, userCache)
+	err := gconv.Struct(req, userCache)
+	if err != nil {
+		return gerror.New("update failed")
+	}
 	res, err := db.Data(*userCache).Where("user_name", userCache.UserName).Update()
 	if err != nil {
-		return err
+		return gerror.New("update failed")
 	}
-	_, err = res.RowsAffected()
-	if err != nil {
-		return err
+	rows, err := res.RowsAffected()
+	if err != nil || rows == 0 {
+		return gerror.New("update failed")
 	}
 	return nil
 }
@@ -72,7 +90,7 @@ func (u *userService) UploadAvatar(r *ghttp.Request, avatar *model.Avatar) (stri
 	var path string = g.Config().GetString("gitBed.PATH")
 	var picName string = gtime.Now().Format("Y/m/d/His")
 
-	url := baseUrl + owner + "/" + repo + "/contents/" + path + "/" + picName + ".png" // url 构建
+	url := baseUrl + owner + "/" + repo + "/contents/" + path + "/" + picName + ".png" // build url
 	res := g.Client().ContentType("multipart/form-data").PostContent(url, g.Map{
 		"access_token": g.Config().GetString("gitBed.ACCESS_TOKEN"),
 		"content": gstr.StrEx(avatar.Avatar, ","),
@@ -81,24 +99,21 @@ func (u *userService) UploadAvatar(r *ghttp.Request, avatar *model.Avatar) (stri
 		})
 
 	if j, err := gjson.DecodeToJson(res); err != nil {
-		return "", err
+		return "", gerror.Wrap(err, "upload avatar failed")
 	} else {
 		avatarUrl := j.GetString("content.download_url")
 		if avatarUrl == ""{
-			return "", err
+			return "", gerror.Wrap(err, "upload avatar failed")
 		}
-		// 头像上传成功就更新到数据库
+		// if update avatar to pic bed succeed then update it to db
 		db := dao.User.Ctx(r.GetCtx())
 		result, err := db.Data(g.Map{"avatar": avatarUrl}).Where("user_name", u.GetCacheUserInfo(r).UserName).Update()
 		if err != nil {
-			return "", err
+			return "", gerror.New("upload avatar failed")
 		}
 		rows, err := result.RowsAffected()
-		if err != nil {
-			return "", err
-		}
-		if rows == 0 {
-			return "", nil
+		if err != nil || rows == 0 {
+			return "", gerror.New("upload avatar failed")
 		}
 		return avatarUrl, nil
 	}

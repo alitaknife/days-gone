@@ -4,10 +4,9 @@ import (
 	"context"
 	"days-gone/app/dao"
 	"days-gone/app/model"
-	"days-gone/library/response"
 	"days-gone/utils"
-	"errors"
 	"github.com/gogf/gf/database/gdb"
+	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 	"github.com/gogf/gf/os/gfile"
@@ -18,47 +17,49 @@ var File = &fileService{}
 
 type fileService struct{}
 
-// FastUpload 文件快传
-func (f *fileService) FastUpload(r *ghttp.Request, sha1 string, name string) (int8, error) {
+// FastUpload fast upload by sha1
+func (f *fileService) FastUpload(r *ghttp.Request, sha1 string, name string) error {
 	db := dao.File.Ctx(r.Context())
-	dbUserFile := dao.UserFile.Ctx(r.Context())
-	resFile, err := db.Where("file_sha1", sha1).One()
-	if err == nil && len(resFile) > 0{
-		resUserFile, err := dbUserFile.Where(g.Map{"file_name": name, "file_sha1": sha1}).One()
+	// query file in file db
+	resp, err := db.Where("file_sha1", sha1).One()
+	if err != nil{
+		return gerror.New("fast upload failed")
+	} else if resp.IsEmpty(){
+		// if there is no this file in file store, should call normal api
+		return gerror.NewCode(302, "call the normal api")
+	} else {
+		// query file in user file db
+		dbUserFile := dao.UserFile.Ctx(r.Context())
+		reps, err := dbUserFile.Where(g.Map{"file_name": name, "file_sha1": sha1}).One()
 		if err != nil {
-			return 1, errors.New("文件上传失败")
+			return gerror.New("fast upload failed")
+		} else if !reps.IsEmpty() {
+			return gerror.New("this file maybe exist")
 		}
-		if len(resUserFile) > 0{
-			// 用户文件表中存在该条数据,直接返回
-			return 1, errors.New("该文件已经存在")
-		}
-		var userFile = &model.UserFile{}
-		err = resFile.Struct(userFile)
+		// if resp is empty, insert this file into user file db
+		userFile := &model.UserFile{}
+		err = resp.Struct(userFile)
 		if err != nil {
-			return 1, errors.New("文件上传失败")
+			return gerror.Wrap(err, "fast upload failed")
 		}
 		userFile.UserName = User.GetCacheUserInfo(r).UserName
 		userFile.UploadAt = gtime.Now()
 		userFile.Status = 0
-		// 写入用户文件表
+		// write info into user file db
 		resInsert, err := dbUserFile.Insert(userFile)
 		if err != nil {
-			return 1, errors.New("文件上传失败")
+			return gerror.New("fast upload failed")
 		}
 		rows, err := resInsert.RowsAffected()
 		if err != nil || rows == 0{
-			return 1, errors.New("文件上传失败")
-		} else {
-			// 秒传成功
-			return 0, nil
+			return gerror.New("fast upload failed")
 		}
+		return nil
 	}
-	// 文件表中没有记录要去调用普通接口
-	return 2, nil
 }
 
-// Upload 文件上传
-func (f *fileService) Upload(r *ghttp.Request, file *ghttp.UploadFile) (code response.Code, err error) {
+// Upload upload file
+func (f *fileService) Upload(r *ghttp.Request, file *ghttp.UploadFile) (err error) {
 	path := g.Cfg().GetString("upload.Path")
 	sha1, _ := utils.Sha1Encrypt(file)
 	fileInfo := &model.File{
@@ -78,26 +79,26 @@ func (f *fileService) Upload(r *ghttp.Request, file *ghttp.UploadFile) (code res
 	}
 
 	db := dao.File.Ctx(r.Context())
-	// 开启事务
+	// open transaction
 	err = db.Transaction(r.Context(), func(ctx context.Context, tx *gdb.TX) error {
-		_, err := tx.Ctx(ctx).Insert(dao.File.Table, fileInfo) // 保存文件信息到表
+		_, err := tx.Ctx(ctx).Insert(dao.File.Table, fileInfo) // save file info into file table
 		if err != nil {
 			return err
 		}
-		_, err = tx.Ctx(ctx).Insert(dao.UserFile.Table, userFileInfo) // 保存文件信息到用户文件表
+		_, err = tx.Ctx(ctx).Insert(dao.UserFile.Table, userFileInfo) // save file info into user file table
 		if err != nil {
 			return err
 		}
-		_, err = file.Save(path) // 保存文件到本地
+		_, err = file.Save(path) // save file into local storage
 		return err
 	})
 	if err != nil {
-		return response.ErrorAdd, err
+		return gerror.New("upload file failed")
 	}
-	return response.SuccessAdd, err
+	return nil
 }
 
-// List 获取文件列表
+// List query file list
 func (f *fileService) List(r *ghttp.Request, req *model.FileListReq) (fileList []*model.File, total int, err error) {
 	condition := make(g.Map)
 	condition["is_delete"] = 0
@@ -115,21 +116,47 @@ func (f *fileService) List(r *ghttp.Request, req *model.FileListReq) (fileList [
 	fileList = ([]*model.File)(nil)
 	limit, offset := req.Paginate()
 	total, err = db.Where(condition).Count()
+	if err != nil {
+		return fileList, total, gerror.New("query file list failed")
+	}
+	if total == 0 {
+		return fileList, total, gerror.New("no file uploaded")
+	}
 	err = db.Limit(limit).Offset(offset).Where(condition).Scan(&fileList)
+	if err != nil {
+		return fileList, total, gerror.New("query file list failed")
+	}
 	return fileList, total, err
 }
 
-// Update 更新文件
+// Update update file info
 func (f *fileService) Update(r *ghttp.Request, req *model.FileUpdateReq) error {
 	db := dao.File.Ctx(r.Context())
-	_, err := db.Data(g.Map{"file_name": req.FileName, "status": req.Status}).Where("id", req.Id).Update()
+	res, err := db.Data(g.Map{"file_name": req.FileName, "status": req.Status}).Where("id", req.Id).Update()
+	if err != nil {
+		return gerror.New("update failed")
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return gerror.New("update failed")
+	}
+	if rows == 0 {
+		return gerror.New("no file updated")
+	}
 	return err
 }
 
-// Delete 删除文件
+// Delete delete file
 func (f *fileService) Delete(r *ghttp.Request, id int) error {
 	db := dao.File.Ctx(r.Context())
-	_, err := db.Data(g.Map{"is_delete": 1}).Where("id", id).Update()
+	res, err := db.Data(g.Map{"is_delete": 1}).Where("id", id).Update()
+	if err != nil {
+		return gerror.New("delete failed")
+	}
+	rows, err := res.RowsAffected()
+	if err != nil || rows == 0 {
+		return gerror.New("delete failed")
+	}
 	return err
 }
 
@@ -137,5 +164,8 @@ func (f *fileService) Delete(r *ghttp.Request, id int) error {
 func (f *fileService) Download(r *ghttp.Request, id int) (res gdb.Value, err error) {
 	db := dao.File.Ctx(r.Context())
 	res, err = db.Fields("file_addr").Where("id = ? and status = ? and is_delete = ?", id, 0, 0).Value()
+	if err != nil || res.IsEmpty(){
+		return nil, gerror.New("download failed")
+	}
 	return res, err
 }

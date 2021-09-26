@@ -5,11 +5,11 @@ BaseUrl = "/api"
 	Address     = ":8199"
 	ServerRoot  = "public"
 	ServerAgent = "gf-app"
-	LogPath     = "/tmp/log/gf-app/server"
+	LogPath     = "/Tmp/log/gf-app/server"
 
 # Logger.
 [logger]
-    Path        = "/tmp/log/gf-app"
+    Path        = "/Tmp/log/gf-app"
     Level       = "all"
     Stdout      = true
 
@@ -20,25 +20,24 @@ BaseUrl = "/api"
     Delimiters  =  ["{{", "}}"]
 # Upload
 [upload]
-    Path = "D:\\Zone\\Script\\upload"
+    Path = "/Tmp/upload"
 # Database.
 [database]
     link  = "mysql:root:root@tcp(127.0.0.1:3306)/days_gone"
     debug = true
     [database.logger]
-        Path   = "/tmp/log/gf-app/sql"
+        Path   = "/Tmp/log/sql"
         Level  = "all"
         Stdout = true
 
 # Redis 数据库配置
 [redis]
     default = "127.0.0.1:6379,0,root?idleTimeout=600"
-#    cache   = "127.0.0.1:6379,1,root?idleTimeout=600"
 
 # gtoken 配置
 [gToken]
     CacheMode = 2
-    CacheKey = "Gone"
+    CacheKey = "Gone-"
     Timeout = 0
     MaxRefresh = 0
     TokenDelimiter= "_"

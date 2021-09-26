@@ -2,8 +2,9 @@ package router
 
 import (
 	"days-gone/app/api"
+	"days-gone/library/response"
 	"days-gone/utils"
-	"github.com/goflyfox/gtoken/gtoken"
+	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 )
@@ -13,32 +14,28 @@ func MiddlewareCORS(r *ghttp.Request) {
 	r.Middleware.Next()
 }
 
+func MiddlewareEnd(r *ghttp.Request) {
+	r.Middleware.Next()
+	// 后置中间件错误拦截处理
+	if err := r.GetError(); err != nil {
+		r.Response.ClearBuffer()
+		response.ErrorResp(r).SetCode(int32(gerror.Code(err))).SetMsg(gerror.Current(err).Error()).JsonExit()
+	}
+}
+
 func init() {
 	s := g.Server()
 	baseUrl := g.Config().GetString("BaseUrl")
 	s.Group(baseUrl+"/", func(group *ghttp.RouterGroup) {
 		// 允许跨域
-		group.Middleware(MiddlewareCORS)
+		group.Middleware(MiddlewareCORS, MiddlewareEnd)
 		// 无需鉴权
 		group.POST("/user/sign-up", api.User.SignUp)
 		group.POST("/common/weather", api.Common.Weather)
-		// 启动 auth
-		utils.Auth = &gtoken.GfToken{
-			CacheMode:        g.Cfg().GetInt8("gToken.CacheMode"),
-			CacheKey:         g.Cfg().GetString("gToken.CacheKey"),
-			Timeout:          g.Cfg().GetInt("gToken.Timeout"),
-			MaxRefresh:       g.Cfg().GetInt("gToken.MaxRefresh"),
-			TokenDelimiter:   g.Cfg().GetString("gToken.TokenDelimiter"),
-			EncryptKey:       g.Cfg().GetBytes("gToken.EncryptKey"),
-			AuthFailMsg:      g.Cfg().GetString("gToken.AuthFailMsg"),
-			MultiLogin:       g.Cfg().GetBool("gToken.MultiLogin"),
-			LoginPath:        "/user/sign-in",
-			LoginBeforeFunc:  api.User.SignIn,
-			LogoutPath:       "/user/log-out",
-			LogoutBeforeFunc: api.User.LogOut,
-		}
 		// 需要认证
 		group.Group("/", func(group *ghttp.RouterGroup) {
+			utils.Auth.LoginBeforeFunc = api.User.SignIn
+			utils.Auth.LogoutBeforeFunc = api.User.LogOut
 			utils.Auth.Middleware(group)
 			group.GET("/user/info", api.User.Info)
 			group.POST("/user/upload-avatar", api.User.UploadAvatar)

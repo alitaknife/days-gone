@@ -4,7 +4,9 @@ import (
 	"days-gone/app/model"
 	"days-gone/app/service"
 	"days-gone/library/response"
+	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/net/ghttp"
+	"github.com/gogf/gf/util/gvalid"
 )
 
 var User = userApi{}
@@ -14,83 +16,82 @@ type userApi struct{}
 func (u *userApi) SignUp(r *ghttp.Request) {
 	var userSignUpReq *model.UserSignUpReq
 	if err := r.Parse(&userSignUpReq); err != nil {
-		response.JsonErrStrExit(r, err.Error())
-		return
+		if v, ok := err.(gvalid.Error); ok{
+			panic(gerror.NewCode(50001, v.FirstString()))
+		}
+		panic(gerror.NewCode(50001, "parse error"))
 	}
 
-	// 用户已存在
+	// insert user by service
 	if err := service.User.SignUp(r, userSignUpReq); err != nil {
-		response.JsonErrExit(r, response.ErrorUserArdExist)
-		return
+		panic(gerror.WrapCode(50001, err, err.Error()))
 	}
-	response.JsonSucExit(r, response.SuccessSignUp)
+	response.SucResp(r).JsonExit()
 }
 
 func (u *userApi) SignIn(r *ghttp.Request) (string, interface{}) {
 	var userSignInReq *model.UserSignInReq
 	if err := r.Parse(&userSignInReq); err != nil {
-		response.JsonErrStrExit(r, err.Error())
+		if v, ok := err.(gvalid.Error); ok{
+			panic(gerror.NewCode(50002, v.FirstString()))
+		}
+		panic(gerror.NewCode(50002, "parse error"))
 	}
 	user, err := service.User.SignIn(r, userSignInReq)
-	// 登录出错
-	if err != nil {
-		response.JsonErrExit(r, response.ErrorSignIn)
-	}
-	if user == nil {
-		// 用户不存在
-		response.JsonErrExit(r, response.ErrorSignInNoFind)
-		// 返回空字符表示 gToken 登录失败
+	// login failed
+	if err != nil || user == nil {
+		panic(gerror.WrapCode(50002, err, err.Error()))
+		// return an empty string to set no token
 		return "", nil
 	}
-	// 通过登录
+	// sign in passed
 	return user.UserName, user
 }
 
-// Info 获取用户信息
+// Info get user`s information
 func (u *userApi) Info(r *ghttp.Request) {
 	userCache := service.User.GetCacheUserInfo(r)
-	if userCache != nil {
-		response.JsonSucExit(r, response.SuccessUserInfo, userCache)
+	if userCache == nil {
+		panic(gerror.NewCode(50003, "cannot find user"))
 	}
-	response.JsonErrExit(r, response.ErrorUserInfo)
+	response.SucResp(r).SetData(userCache).JsonExit()
 }
 
-// UpdateInfo 更新用户信息
+// UpdateInfo update user`s information
 func (u *userApi) UpdateInfo(r *ghttp.Request) {
 	var userInfoReq *model.UserInfoReq
-	err := r.Parse(&userInfoReq)
-	if err != nil {
-		response.JsonErrStrExit(r, err.Error())
-		return
+	// parse the parameter
+	if err := r.Parse(&userInfoReq); err != nil {
+		if v, ok := err.(gvalid.Error); ok{
+			panic(gerror.NewCode(50002, v.FirstString()))
+		}
+		panic(gerror.NewCode(50002, "parse error"))
 	}
 
+	// query user by service
 	if err := service.User.UpdateInfo(r, userInfoReq); err != nil {
-		response.JsonErrExit(r, response.ErrorUpdated)
-	} else {
-		response.JsonSucExit(r, response.SuccessUpdated)
+		panic(gerror.WrapCode(50002, err, err.Error()))
 	}
+	response.SucResp(r).JsonExit()
 }
 
 func (u *userApi) UploadAvatar(r *ghttp.Request) {
 	var avatar *model.Avatar
-	err := r.Parse(&avatar)
-	if err != nil {
-		response.JsonErrStrExit(r, err.Error())
-		return
+	if err := r.Parse(&avatar); err != nil {
+		if v, ok := err.(gvalid.Error); ok{
+			panic(gerror.NewCode(50002, v.FirstString()))
+		}
+		panic(gerror.NewCode(50002, "parse error"))
 	}
+
 	avatarUrl, err := service.User.UploadAvatar(r, avatar)
 	if err != nil {
-		response.JsonErrExit(r, response.ErrorNoFileUpload)
-		return
+		panic(gerror.WrapCode(50002, err, err.Error()))
 	}
-	if avatarUrl == "" {
-		response.JsonErrExit(r, response.ErrorNoFileUpload)
-	} else {
-		response.JsonSucExit(r, response.SuccessUpdated, avatarUrl)
-	}
+	response.SucResp(r).SetData(avatarUrl).JsonExit()
 }
 
-// LogOut 登出之前调用
+// LogOut call before logout
 func (u *userApi) LogOut(r *ghttp.Request) bool {
 	isSuc := service.User.LogOut(r)
 	return isSuc
