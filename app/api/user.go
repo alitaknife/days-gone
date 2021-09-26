@@ -33,14 +33,14 @@ func (u *userApi) SignIn(r *ghttp.Request) (string, interface{}) {
 	var userSignInReq *model.UserSignInReq
 	if err := r.Parse(&userSignInReq); err != nil {
 		if v, ok := err.(gvalid.Error); ok{
-			panic(gerror.NewCode(50002, v.FirstString()))
+			response.ErrorResp(r).SetCode(50002).SetMsg(v.FirstString()).JsonExit()
 		}
-		panic(gerror.NewCode(50002, "parse error"))
+		response.ErrorResp(r).SetCode(50002).SetMsg("parse error").JsonExit()
 	}
 	user, err := service.User.SignIn(r, userSignInReq)
 	// login failed
 	if err != nil || user == nil {
-		panic(gerror.WrapCode(50002, err, err.Error()))
+		response.ErrorResp(r).SetCode(50002).SetMsg(gerror.Current(err).Error()).JsonExit()
 		// return an empty string to set no token
 		return "", nil
 	}
