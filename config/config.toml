@@ -5,11 +5,11 @@ BaseUrl = "/api"
 	Address     = ":8199"
 	ServerRoot  = "public"
 	ServerAgent = "gf-app"
-	LogPath     = "/Tmp/log/gf-app/server"
+	LogPath     = "/tmp/log/gf-app/server"
 
 # Logger.
 [logger]
-    Path        = "/Tmp/log/gf-app"
+    Path        = "/tmp/log/gf-app"
     Level       = "all"
     Stdout      = true
 
@@ -20,13 +20,13 @@ BaseUrl = "/api"
     Delimiters  =  ["{{", "}}"]
 # Upload
 [upload]
-    Path = "/Tmp/upload"
+    Path = "/tmp/upload"
 # Database.
 [database]
     link  = "mysql:root:root@tcp(127.0.0.1:3306)/days_gone"
     debug = true
     [database.logger]
-        Path   = "/Tmp/log/sql"
+        Path   = "/tmp/log/sql"
         Level  = "all"
         Stdout = true
 
@@ -37,7 +37,7 @@ BaseUrl = "/api"
 # gtoken 配置
 [gToken]
     CacheMode = 2
-    CacheKey = "Gone-"
+    CacheKey = "Gone"
     Timeout = 0
     MaxRefresh = 0
     TokenDelimiter= "_"

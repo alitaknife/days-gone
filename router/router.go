@@ -7,6 +7,7 @@ import (
 	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
+	"net/http"
 )
 
 func MiddlewareCORS(r *ghttp.Request) {
@@ -19,6 +20,7 @@ func MiddlewareEnd(r *ghttp.Request) {
 	// 后置中间件错误拦截处理
 	if err := r.GetError(); err != nil {
 		r.Response.ClearBuffer()
+		r.Response.Status = http.StatusOK
 		response.ErrorResp(r).SetCode(int32(gerror.Code(err))).SetMsg(gerror.Current(err).Error()).JsonExit()
 	}
 }

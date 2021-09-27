@@ -31,7 +31,12 @@ func init() {
 var formatResp = func(r *ghttp.Request, res gtoken.Resp) {
 	switch res.Code {
 	case gtoken.SUCCESS:
-		response.SucResp(r).SetCode(20002).SetData(res.Data).JsonExit()
+		token := res.GetString("token")
+		if token != "" {
+			response.SucResp(r).SetCode(20002).SetData(g.Map{"token": token}).JsonExit()
+		} else {
+			r.Middleware.Next()
+		}
 	case gtoken.ERROR, gtoken.UNAUTHORIZED:
 		response.ErrorResp(r).SetCode(50000).SetMsg("The current token is not authenticated").JsonExit()
 	case gtoken.FAIL:

@@ -61,7 +61,7 @@ func (f *fileApi) List(r *ghttp.Request) {
 	} else {
 		response.SucResp(r).SetData(model.PageRes{
 			List: fileList, Total: total, Current: fileListReq.Current, Size: fileListReq.Size,
-		})
+		}).JsonExit()
 	}
 }
 

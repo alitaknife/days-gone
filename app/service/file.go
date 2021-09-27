@@ -120,7 +120,7 @@ func (f *fileService) List(r *ghttp.Request, req *model.FileListReq) (fileList [
 		return fileList, total, gerror.New("query file list failed")
 	}
 	if total == 0 {
-		return fileList, total, gerror.New("no file uploaded")
+		return []*model.File{}, total, err
 	}
 	err = db.Limit(limit).Offset(offset).Where(condition).Scan(&fileList)
 	if err != nil {
