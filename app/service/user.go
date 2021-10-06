@@ -11,7 +11,6 @@ import (
 	"github.com/gogf/gf/net/ghttp"
 	"github.com/gogf/gf/os/gtime"
 	"github.com/gogf/gf/text/gstr"
-	"github.com/gogf/gf/util/gconv"
 	"github.com/gogf/gf/util/guid"
 )
 
@@ -67,12 +66,7 @@ func (u *userService) SignIn(r *ghttp.Request, req *model.UserSignInReq) (user *
 
 func (u *userService) UpdateInfo(r *ghttp.Request, req *model.UserInfoReq) error {
 	db := dao.User.Ctx(r.Context())
-	userCache := u.GetCacheUserInfo(r)
-	err := gconv.Struct(req, userCache)
-	if err != nil {
-		return gerror.New("update failed")
-	}
-	res, err := db.Data(*userCache).Where("user_name", userCache.UserName).Update()
+	res, err := db.Data(*req).Where("user_name", u.GetCacheUserName(r)).Update()
 	if err != nil {
 		return gerror.New("update failed")
 	}
@@ -107,7 +101,7 @@ func (u *userService) UploadAvatar(r *ghttp.Request, avatar *model.Avatar) (stri
 		}
 		// if update avatar to pic bed succeed then update it to db
 		db := dao.User.Ctx(r.GetCtx())
-		result, err := db.Data(g.Map{"avatar": avatarUrl}).Where("user_name", u.GetCacheUserInfo(r).UserName).Update()
+		result, err := db.Data(g.Map{"avatar": avatarUrl}).Where("user_name", u.GetCacheUserName(r)).Update()
 		if err != nil {
 			return "", gerror.New("upload avatar failed")
 		}
@@ -121,7 +115,7 @@ func (u *userService) UploadAvatar(r *ghttp.Request, avatar *model.Avatar) (stri
 
 func (u *userService) LogOut(r *ghttp.Request) bool {
 	db := dao.User.Ctx(r.GetCtx())
-	userName := u.GetCacheUserInfo(r).UserName
+	userName := u.GetCacheUserName(r)
 	_, err := db.Data(g.Map{"last_active": gtime.Now()}).Where("user_name", userName).Update()
 	if err != nil {
 		return false
@@ -129,12 +123,22 @@ func (u *userService) LogOut(r *ghttp.Request) bool {
 	return true
 }
 
-
-
-// GetCacheUserInfo 获取缓存用户信息
-func (u *userService) GetCacheUserInfo(r *ghttp.Request) *model.UserSignInRes {
+// GetCacheUserName get user name in cache
+func (u *userService) GetCacheUserName(r *ghttp.Request) string {
 	res := utils.Auth.GetTokenData(r)
-	userCache := &model.UserSignInRes{}
-	_ = gconv.Struct(res.Get("data"), userCache)
-	return userCache
+	return res.GetString("userKey")
+}
+
+// GetUserInfo get user info from db
+func (u *userService) GetUserInfo(r *ghttp.Request) (*model.UserSignInRes, error) {
+	db := dao.User.Ctx(r.GetCtx())
+	userInfo := &model.UserSignInRes{}
+	err := db.Where("user_name", u.GetCacheUserName(r)).Scan(&userInfo)
+	if err != nil {
+		return nil, gerror.New("get user info failed")
+	}
+	if userInfo == nil {
+		return userInfo, gerror.New("cannot find this user")
+	}
+	return userInfo, nil
 }

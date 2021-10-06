@@ -45,16 +45,16 @@ func (u *userApi) SignIn(r *ghttp.Request) (string, interface{}) {
 		return "", nil
 	}
 	// sign in passed
-	return user.UserName, user
+	return user.UserName, ""
 }
 
 // Info get user`s information
 func (u *userApi) Info(r *ghttp.Request) {
-	userCache := service.User.GetCacheUserInfo(r)
-	if userCache == nil {
-		panic(gerror.NewCode(50003, "cannot find user"))
+	userInfo, err := service.User.GetUserInfo(r)
+	if err != nil {
+		panic(gerror.WrapCode(50003, err, err.Error()))
 	}
-	response.SucResp(r).SetData(userCache).JsonExit()
+	response.SucResp(r).SetData(userInfo).JsonExit()
 }
 
 // UpdateInfo update user`s information

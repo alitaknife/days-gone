@@ -3,6 +3,7 @@ package service
 import (
 	"days-gone/app/dao"
 	"days-gone/app/model"
+	"days-gone/utils"
 	"github.com/gogf/gf/database/gdb"
 	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/frame/g"
@@ -17,7 +18,7 @@ type userFileService struct {}
 // List 获取文件列表
 func (f *userFileService) List(r *ghttp.Request, req *model.UserFileListReq) (userFileList []*model.UserFile, total int, err error) {
 	condition := make(g.Map)
-	condition["user_name"] = User.GetCacheUserInfo(r).UserName
+	condition["user_name"] = utils.Auth.GetTokenData(r).GetString("userKey")
 	condition["is_delete"] = 0
 
 	if req.FileName != "" {
@@ -106,7 +107,7 @@ func (f *userFileService) Download(r *ghttp.Request, id int) (s string, err erro
 // UsedCap get the capacity of cloud zone used
 func (f *userFileService) UsedCap(r *ghttp.Request) (float64, error) {
 	db := dao.UserFile.Ctx(r.GetCtx())
-	userName := User.GetCacheUserInfo(r).UserName
+	userName := User.GetCacheUserName(r)
 	size, err := db.Fields("SUM(file_size)").Where(g.Map{"user_name": userName, "status": 0, "is_delete": 0}).Value()
 	if err != nil {
 		return 0, gerror.New("get the capacity failed")
@@ -118,7 +119,7 @@ func (f *userFileService) UsedCap(r *ghttp.Request) (float64, error) {
 // FilesType get user`s all file`s types
 func (f *userFileService) FilesType(r *ghttp.Request) (gdb.Result, error)  {
 	db := dao.UserFile.Ctx(r.GetCtx())
-	userName := User.GetCacheUserInfo(r).UserName
+	userName := User.GetCacheUserName(r)
 	res, err := db.Fields("count(1) as value", "substring_index(file_name, \".\", -1) as name").Where(g.Map{"user_name": userName, "status": 0, "is_delete": 0}).Group("name").OrderAsc("value").All()
 	if err != nil {
 		return nil, gerror.New("get the types failed")
@@ -128,7 +129,7 @@ func (f *userFileService) FilesType(r *ghttp.Request) (gdb.Result, error)  {
 
 // UploadDays Get the number of files uploaded in the last month
 func (f *userFileService) UploadDays(r *ghttp.Request) (gdb.Result, error) {
-	userName := User.GetCacheUserInfo(r).UserName
+	userName := User.GetCacheUserName(r)
 	res, err := dao.UserFile.UploadFileDays(userName)
 	if err != nil {
 		return nil, gerror.New("get the files num failed")

@@ -42,7 +42,7 @@ func (f *fileService) FastUpload(r *ghttp.Request, sha1 string, name string) err
 		if err != nil {
 			return gerror.Wrap(err, "fast upload failed")
 		}
-		userFile.UserName = User.GetCacheUserInfo(r).UserName
+		userFile.UserName = User.GetCacheUserName(r)
 		userFile.UploadAt = gtime.Now()
 		userFile.Status = 0
 		// write info into user file db
@@ -71,7 +71,7 @@ func (f *fileService) Upload(r *ghttp.Request, file *ghttp.UploadFile) (err erro
 	}
 
 	userFileInfo := &model.UserFile{
-		UserName: User.GetCacheUserInfo(r).UserName,
+		UserName: User.GetCacheUserName(r),
 		FileSha1: sha1,
 		FileSize: file.Size,
 		FileName: file.Filename,
