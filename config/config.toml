@@ -41,7 +41,7 @@ BaseUrl = "/api"
     Timeout = 0
     MaxRefresh = 0
     TokenDelimiter= "_"
-    EncryptKey = "c2dab3e23f19038725e18ef81c86bb50"
+    EncryptKey = "c2dab3e23f19038725e18ef81c86bb43"
     AuthFailMsg = "登录超时，请重新登录"
     MultiLogin = true
 
