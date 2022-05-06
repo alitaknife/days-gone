@@ -47,13 +47,12 @@ BaseUrl = "/api"
 
 # 图床令牌
 [gitBed]
-    BASE_URL = "https://gitee.com/api/v5/repos/"
-    ACCESS_TOKEN = "21a187151d787c88ee6908d4711a15eb"  # 请自行设置
-    OWNER = "alitaknife"
-    REPO = "images"
-    PATH = "img"
-    MSG = "add pic by days gone"
-    BRANCH = "master"
+    Ht = "https://"
+    Endpoint = "oss-cn-hangzhou.aliyuncs.com"
+    AvatarPath = "img/avatar/"
+    Bucket = "xxxxx"
+    AccessKeyId = "xxxxxxxxxxxxx"
+    AccessKeySecret = "xxxxxxxxxxxxxxxxx" # 请自行设置
 
 # gf 工具配置
 [gfcli]

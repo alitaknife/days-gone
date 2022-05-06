@@ -4,14 +4,17 @@ import (
 	"days-gone/app/dao"
 	"days-gone/app/model"
 	"days-gone/utils"
+	"fmt"
 	"github.com/gogf/gf/crypto/gmd5"
-	"github.com/gogf/gf/encoding/gjson"
+	"github.com/gogf/gf/encoding/gbase64"
 	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 	"github.com/gogf/gf/os/gtime"
 	"github.com/gogf/gf/text/gstr"
+	"github.com/gogf/gf/util/grand"
 	"github.com/gogf/gf/util/guid"
+	"strings"
 )
 
 var User = userService{}
@@ -78,39 +81,43 @@ func (u *userService) UpdateInfo(r *ghttp.Request, req *model.UserInfoReq) error
 }
 
 func (u *userService) UploadAvatar(r *ghttp.Request, avatar *model.Avatar) (string, error) {
-	var baseUrl string = g.Config().GetString("gitBed.BASE_URL")
-	var owner string = g.Config().GetString("gitBed.OWNER")
-	var repo string = g.Config().GetString("gitBed.REPO")
-	var path string = g.Config().GetString("gitBed.PATH")
-	var picName string = gtime.Now().Format("Y/m/d/His")
+	// get picture's name
+	typeName := gstr.StrEx(gstr.StrTillEx(avatar.Avatar, ";"), "/")
+	picName := fmt.Sprintf("%v.%v", grand.Letters(6), typeName)
+	objDir := fmt.Sprintf("%v%v", g.Config().GetString("gitBed.AvatarPath"), picName)
 
-	url := baseUrl + owner + "/" + repo + "/contents/" + path + "/" + picName + ".png" // build url
-	res := g.Client().ContentType("multipart/form-data").PostContent(url, g.Map{
-		"access_token": g.Config().GetString("gitBed.ACCESS_TOKEN"),
-		"content": gstr.StrEx(avatar.Avatar, ","),
-		"message": g.Config().GetString("gitBed.MSG"),
-		"branch": g.Config().GetString("gitBed.BRANCH"),
-		})
+	// get base64 content
+	base64Str := gstr.StrEx(avatar.Avatar, ",")
+	base64C, _ := gbase64.DecodeToString(base64Str)
 
-	if j, err := gjson.DecodeToJson(res); err != nil {
+	// get bucket obj
+	bucketStr := g.Config().GetString("gitBed.Bucket")
+	bucketObj, err := utils.Client.Bucket(bucketStr)
+	if err != nil {
 		return "", gerror.Wrap(err, "upload avatar failed")
-	} else {
-		avatarUrl := j.GetString("content.download_url")
-		if avatarUrl == ""{
-			return "", gerror.Wrap(err, "upload avatar failed")
-		}
-		// if update avatar to pic bed succeed then update it to db
-		db := dao.User.Ctx(r.GetCtx())
-		result, err := db.Data(g.Map{"avatar": avatarUrl}).Where("user_name", u.GetCacheUserName(r)).Update()
-		if err != nil {
-			return "", gerror.New("upload avatar failed")
-		}
-		rows, err := result.RowsAffected()
-		if err != nil || rows == 0 {
-			return "", gerror.New("upload avatar failed")
-		}
-		return avatarUrl, nil
 	}
+
+	// request oss server
+	err = bucketObj.PutObject(objDir, strings.NewReader(base64C))
+	if err != nil {
+		return "", gerror.Wrap(err, "upload avatar failed")
+	}
+	// gen url
+	ht := g.Config().GetString("gitBed.Ht")
+	endPoint := g.Config().GetString("gitBed.Endpoint")
+	url := fmt.Sprintf("%v%v.%v/%v", ht, bucketStr, endPoint, objDir)
+
+	// update url to db
+	db := dao.User.Ctx(r.GetCtx())
+	result, err := db.Data(g.Map{"avatar": url}).Where("user_name", u.GetCacheUserName(r)).Update()
+	if err != nil {
+		return "", gerror.New("upload avatar failed")
+	}
+	rows, err := result.RowsAffected()
+	if err != nil || rows == 0 {
+		return "", gerror.New("upload avatar failed")
+	}
+	return url, nil
 }
 
 func (u *userService) LogOut(r *ghttp.Request) bool {
